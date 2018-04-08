@@ -5,6 +5,7 @@ from azureml import Workspace
 class RequestHandler:
 
     def __init__(self):
+        """ In the init method (called at the laucnh of the chabot, we retrieve the datagram containing all the possible responses of the bot and their related topic. """
         ws = Workspace(
         workspace_id='7b1591095a27421eb716eca8aa6a9f96',
         authorization_token='RvNpB8Nnr6EIQnwiwOCVRglAWsYk+kDnc6KLoxRn0/ex68i9azNE6Z+TRlBaLZI+vXsudFXeXmqyaqV0aSUb5Q==',
@@ -19,6 +20,7 @@ class RequestHandler:
         self.frame = ds.to_dataframe()
 
     def getScoredTopics(self,text_input):
+        """ Method that returns the topic with the higher probability according to the user's message, thanks to request to a web service """
         data = {
                 "Inputs": {
                         "input1":
@@ -42,13 +44,11 @@ class RequestHandler:
 
         try:
             response = urllib.request.urlopen(req)
-
-            #result = response.read()
             result = json.loads(response.readline().decode('utf-8'))
             scored_topics = result['Results']['output1'][0]['Scored Labels']
-            #print("score "+scored_labels)
+            
             return(scored_topics)
-            #print(json.dumps(response, indent=4))
+            
         except urllib.error.HTTPError as error:
             print("The request failed with status code: " + str(error.code))
 
@@ -57,14 +57,15 @@ class RequestHandler:
             print(json.loads(error.read().decode("utf8", 'ignore')))
             
     def getFinalAnswer(self,scored_topics):
+        """ Method that return a random message for the topic passed in input parameter. This method is called after getting the topic with the higher probability"""
         
-        #self.frame = self.ds.to_dataframe()
         tmp=self.frame.loc[self.frame['topic'] == scored_topics]
         tmp2=tmp.loc[:,'text_column']
         
         return tmp2.sample(n=1).item()
 
     def getResponseFromChatBot(self,text_input):
+        """ This is the main method of this class. It first calls the getScoredTopics to get the most probable topic and then calls getFinalAnswer method in passing this topic in input parameter"""
         scored_topics=self.getScoredTopics(text_input)
         
         return self.getFinalAnswer(scored_topics)
